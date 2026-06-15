@@ -1,0 +1,359 @@
+
+<h2 class="sr-only">GL Science Practice Questions Year 9 — gamified, 40 random multiple choice questions per session</h2>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+#root{padding:1rem 0;max-width:660px;font-family:var(--font-sans, system-ui, sans-serif);--ink:#16242A;--paper:#F7F5EE;--lime:#8FE36B;--lime-deep:#3F7A2A;--amber:#FFB84D;--amber-deep:#7A4E00;--coral:#FF6B5E;--coral-deep:#8A2A22;--card:#FFFFFF;--line:#E3E0D6;--mono:'SF Mono', 'Roboto Mono', Consolas, monospace}
+
+#start{text-align:center;padding:2.5rem 1.5rem;background:var(--ink);border-radius:18px;color:var(--paper)}
+#start .badge-row{display:flex;justify-content:center;gap:10px;margin-bottom:1.25rem}
+#start .badge-row span{width:10px;height:10px;border-radius:50%;display:inline-block}
+#start h1{font-size:24px;font-weight:700;margin-bottom:.5rem;letter-spacing:-0.01em}
+#start p{font-size:14px;color:#C8D4D2;margin-bottom:1.75rem;line-height:1.6}
+#start .meta-line{font-family:var(--mono);font-size:12px;color:var(--lime);letter-spacing:.04em;text-transform:uppercase;margin-bottom:.4rem}
+
+#quiz{display:none}
+#end{display:none;text-align:center;padding:2.5rem 1.5rem}
+
+.hud{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;gap:12px}
+.hud-block{display:flex;flex-direction:column}
+.hud-label{font-family:var(--mono);font-size:10px;color:#9A958A;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.hud-value{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--ink)}
+.hud-value.score{color:var(--lime-deep)}
+.hud-value.streak{color:var(--amber-deep)}
+
+.streak-meter{display:flex;gap:5px;margin-top:4px}
+.streak-pip{width:18px;height:6px;border-radius:3px;background:var(--line);transition:background .25s, transform .25s}
+.streak-pip.lit{background:var(--amber);transform:scaleY(1.3)}
+.streak-pip.fire{background:var(--coral)}
+
+.prog-bg{background:var(--line);border-radius:99px;height:6px;margin-bottom:1.5rem;overflow:hidden}
+.prog-fill{background:linear-gradient(90deg,var(--lime-deep),var(--lime));border-radius:99px;height:6px;transition:width .35s}
+
+.q-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 2px rgba(20,30,30,.04)}
+.q-text{font-size:17px;font-weight:600;color:var(--ink);line-height:1.5;margin-bottom:1.1rem}
+
+.opts{display:flex;flex-direction:column;gap:9px}
+.opt{background:var(--paper);border:1.5px solid var(--line);border-radius:12px;padding:13px 16px;text-align:left;font-size:15px;color:var(--ink);cursor:pointer;display:flex;align-items:flex-start;gap:11px;width:100%;transition:border-color .15s, background .15s, transform .1s}
+.opt:hover:not([disabled]){border-color:#B8C9C5;background:#FFFFFF}
+.opt:active:not([disabled]){transform:scale(.99)}
+.opt[disabled]{cursor:default}
+.lbl{font-family:var(--mono);font-size:12px;font-weight:700;color:#9A958A;min-width:20px;height:20px;border-radius:6px;background:var(--line);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.opt.correct{background:#EBFAE3;border-color:var(--lime-deep)}
+.opt.correct .lbl{background:var(--lime);color:var(--lime-deep)}
+.opt.wrong{background:#FFECE9;border-color:var(--coral)}
+.opt.wrong .lbl{background:var(--coral);color:#fff}
+.opt.reveal{background:#EBFAE3;border-color:var(--lime-deep)}
+.opt.reveal .lbl{background:var(--lime);color:var(--lime-deep)}
+
+.fb{margin-top:1rem;border-radius:10px;padding:11px 15px;font-size:14px;line-height:1.5;display:none;font-weight:500}
+.fb.ok{background:#EBFAE3;color:var(--lime-deep);display:block}
+.fb.no{background:#FFECE9;color:var(--coral-deep);display:block}
+.fb .pts{font-family:var(--mono);font-weight:700}
+
+.nxt{margin-top:1rem;background:var(--ink);border:none;border-radius:10px;padding:12px 26px;font-size:14px;font-weight:600;cursor:pointer;color:var(--paper);display:none;width:100%}
+.nxt:hover{background:#2A3D44}
+.big-btn{background:var(--lime);border:none;border-radius:10px;padding:13px 32px;font-size:15px;font-weight:700;cursor:pointer;color:var(--lime-deep)}
+.big-btn:hover{background:#A2EC85}
+
+/* End screen */
+.rank-badge{width:110px;height:110px;border-radius:50%;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:44px;animation:popin .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes popin{0%{transform:scale(0) rotate(-15deg);opacity:0}100%{transform:scale(1) rotate(0deg);opacity:1}}
+.rank-bronze{background:linear-gradient(135deg,#E8C49A,#B8763E)}
+.rank-silver{background:linear-gradient(135deg,#E8E8E8,#A8B0B5)}
+.rank-gold{background:linear-gradient(135deg,#FFE699,#E0A937)}
+.rank-platinum{background:linear-gradient(135deg,#D4F0EC,#7FD4C8)}
+.rank-name{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.3rem}
+.end-score{font-size:48px;font-weight:800;color:var(--ink);line-height:1;margin-bottom:6px;font-family:var(--mono)}
+.end-pts{font-size:15px;color:#9A958A;margin-bottom:.25rem}
+.end-msg{font-size:15px;color:#5C6863;margin-bottom:1.75rem;line-height:1.5}
+.stat-row{display:flex;justify-content:center;gap:24px;margin-bottom:1.75rem}
+.stat{display:flex;flex-direction:column;align-items:center}
+.stat-num{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--ink)}
+.stat-lbl{font-size:11px;color:#9A958A;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+
+.toast{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-40px);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:13px;font-weight:700;padding:8px 18px;border-radius:99px;opacity:0;transition:transform .3s, opacity .3s;z-index:50;letter-spacing:.04em;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+</style>
+
+<div id="root">
+  <div id="start">
+    <div class="badge-row">
+      <span style="background:var(--lime)"></span>
+      <span style="background:var(--amber)"></span>
+      <span style="background:var(--coral)"></span>
+    </div>
+    <div class="meta-line">Mission Briefing</div>
+    <h1>GL Science: Year 9</h1>
+    <p>40 random questions. 3 attempts each.<br>First-try answers score the most — and keep your streak alive for bonus points.</p>
+    <button class="big-btn" onclick="startQuiz()">Start mission</button>
+  </div>
+  <div id="quiz">
+    <div class="hud">
+      <div class="hud-block">
+        <span class="hud-label">Question</span>
+        <span class="hud-value" id="qlabel">1 / 40</span>
+      </div>
+      <div class="hud-block">
+        <span class="hud-label">Score</span>
+        <span class="hud-value score" id="slabel">0</span>
+      </div>
+      <div class="hud-block" style="align-items:flex-end">
+        <span class="hud-label">Streak</span>
+        <span class="hud-value streak" id="streaklabel">0</span>
+        <div class="streak-meter" id="streakmeter"></div>
+      </div>
+    </div>
+    <div class="prog-bg"><div class="prog-fill" id="pfill" style="width:0%"></div></div>
+    <div class="q-card">
+      <div class="q-text" id="qtext"></div>
+      <div class="opts" id="opts"></div>
+      <div class="fb" id="fb"></div>
+      <button class="nxt" id="nxt" onclick="nextQ()"></button>
+    </div>
+  </div>
+  <div id="end">
+    <div class="rank-badge" id="rankbadge"></div>
+    <div class="rank-name" id="rankname"></div>
+    <div class="end-score" id="escore"></div>
+    <div class="end-pts" id="eptsline"></div>
+    <div class="end-msg" id="emsg"></div>
+    <div class="stat-row">
+      <div class="stat"><span class="stat-num" id="statcorrect">0</span><span class="stat-lbl">Correct</span></div>
+      <div class="stat"><span class="stat-num" id="statfirst">0</span><span class="stat-lbl">1st try</span></div>
+      <div class="stat"><span class="stat-num" id="statbeststreak">0</span><span class="stat-lbl">Best streak</span></div>
+    </div>
+    <button class="big-btn" onclick="startQuiz()">New mission</button>
+  </div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const BANK = [
+  {q:"Which of these is linked to a higher risk of developing heart disease and lung cancer?",o:["Drinking coffee","Drinking fizzy drinks","Taking aspirin","Smoking cigarettes"],a:3},
+  {q:"Which is an example of muscles moving a bone?",o:["Tam's eyes blinking in sunlight","Roberto's stomach squeezing to break up food","Marek's heart pumping blood","Jack's jaw chewing a carrot"],a:3},
+  {q:"What are the two main jobs of the skeletal system?",o:["To support and protect the organs of the body","To digest food and absorb nutrients","To transport nutrients and defend from disease","To sense changes and move muscles"],a:0},
+  {q:"James Watson and Francis Crick worked out the structure of DNA by looking at previous discoveries. What does this tell us about scientific discoveries?",o:["New discoveries can be made by looking at old observations in a new way","Data from old experiments are rarely used to make new discoveries","Scientists need to work independently to make new discoveries","Scientific problems can only be solved by a group of people"],a:0},
+  {q:"Emma measures her breathing rate before and during exercise. Which statement explains the increase in her breathing rate?",o:["Cells require more nutrients over time","Cells need more oxygen as exercise becomes more strenuous","Cells require more water to regulate temperature","Cells need to produce more protein to build muscle"],a:1},
+  {q:"In what way can bacteria be good for the human body?",o:["Build strong bones","Maintain body temperature","Deliver oxygen to the cells","Break down food"],a:3},
+  {q:"From simplest to most complicated, how are animals and plants organised?",o:["Cell → tissue → organ → system","System → organ → tissue → cell","Organ → cell → tissue → system","Tissue → system → cell → organ"],a:0},
+  {q:"Athletes often experience muscle cramps after sprint races. Which of the following causes the cramps?",o:["Carbonic acid from aerobic respiration building up in the muscles","Lactic acid from anaerobic respiration building up in the muscles","The blood supply to the muscles being reduced","The blood supplying too much oxygen to the muscles"],a:1},
+  {q:"Emma measures the mass of some large rocks. Which units should she use to record her results?",o:["Pounds","Kilograms","Milligrams","Centimetres"],a:1},
+  {q:"Which statement about protons in elements is correct?",o:["Oxygen (O) has more protons than carbon (C)","Iron (Fe) has more protons than silver (Ag)","Sodium (Na) has more protons than chlorine (Cl)","Hydrogen (H) has more protons than helium (He)"],a:1},
+  {q:"Which group in the periodic table contains the noble gases?",o:["Group 1","Group 2","Group 7","Group 8 or 0"],a:3},
+  {q:"Natural gas and oil are fossil fuels that are formed from...",o:["Rocks that have been dissolved by water","Lava that has cooled","The remains of plants and animals","Minerals that have reacted with air and water"],a:2},
+  {q:"Soda water is water that has bubbles of carbon dioxide in it. Soda water is...",o:["A mixture","A molecule","An element","A compound"],a:0},
+  {q:"Photosynthesis and respiration are both parts of which cycle?",o:["The carbon cycle","The nitrogen cycle","The water cycle","The rock cycle"],a:0},
+  {q:"Which of the following best describes the mantle of the Earth?",o:["A thin layer of solid rock on the surface","A solid layer made of iron and nickel","A layer of semi-molten rock (magma)","A layer of molten iron and nickel"],a:2},
+  {q:"A tower of blocks remains standing. This is because of...",o:["Friction","Air resistance","Magnetism","Balanced forces"],a:3},
+  {q:"Which thermometer should be used to measure the temperature of very cold snow?",o:["A thermometer ranging from 0°C to 300°C","A thermometer ranging from -20°C to 110°C","A thermometer ranging from 35°C to 42°C","A thermometer ranging from 100°C to 250°C"],a:1},
+  {q:"Marek does three trials when sliding objects down a ramp. Why does he do three trials?",o:["To test several different materials","To make sure all objects travel the same distance","To predict the distance the next object will travel","To make sure the distance recorded is repeatable"],a:3},
+  {q:"What happens when water is changed from a liquid to a gas?",o:["The atoms lose electrons","A new compound is formed","Molecules spread further apart","Hydrogen is separated from oxygen"],a:2},
+  {q:"In a bottle of water, where is the pressure highest?",o:["At the top near the cap","At the water surface","At the bottom of the bottle","Equally throughout"],a:2},
+  {q:"Container 1 (30°C) is placed inside container 2 (70°C) for 30 minutes. Which temperatures are most likely after 30 minutes?",o:["Container 1: 70°C, Container 2: 30°C","Container 1: 50°C, Container 2: 50°C","Container 1: 40°C, Container 2: 100°C","Container 1: 22°C, Container 2: 20°C"],a:1},
+  {q:"Why is a kitten's appearance not identical to either of its parents?",o:["The kitten has a genetic disease","The kitten is not fully developed yet","The kitten did not have proper nutrition","The kitten gets half its genes from each parent, creating variety"],a:3},
+  {q:"Which statement best describes sexual reproduction in all animals?",o:["Egg and sperm join together","Pollen and seed join together","Offspring have characteristics of only one parent","Offspring are identical to one parent"],a:0},
+  {q:"Foxes can live in the same areas as humans because they...",o:["Live for a very long time","Are members of the dog family","Depend on humans for survival","Can adapt their lives to the presence of humans"],a:3},
+  {q:"A graph shows the number of species in different aquatic environments by salt concentration. Which aquatic environment is least able to support life?",o:["Fresh water","Brackish water","Seawater","Salt lakes"],a:3},
+  {q:"How do birds eating fruit help the reproductive cycle of plants?",o:["Plant seeds are dispersed over a wide area","Other predators are scared away","Nearby ground becomes fertilised","Old twigs and branches are removed"],a:0},
+  {q:"In an ocean food web, if the number of sea urchins increased, what would be the most likely effect?",o:["A decrease in the number of sea otters","A decrease in the amount of seaweed","A decrease in the amount of sunlight","A decrease in the number of parrotfish"],a:1},
+  {q:"A scientist completes her experiment. What should a different scientist do to check the original conclusion?",o:["Propose a different conclusion from the same data","Study the investigation reports to evaluate the conclusion","Change the current models to fit the conclusion","Develop new technologies based on the conclusion"],a:1},
+  {q:"When carrying out an experiment using chemicals, what must a student always do to ensure they are working safely?",o:["Work in large groups","Wear safety goggles","Wear short sleeves","Keep a window open"],a:1},
+  {q:"When a gas is heated, it will...",o:["Expand and fall","Expand and rise","Condense and fall","Condense and rise"],a:1},
+  {q:"Zara puts 250 cm³ of water into beakers at different temperatures for 12 hours. Which conclusion is supported by the data (less water remains at higher temperatures)?",o:["Water does not evaporate at 10°C","250 cm³ of water takes a long time to heat up","Water evaporates more quickly at a lower temperature","Water evaporates more quickly at a higher temperature"],a:3},
+  {q:"Jack investigates whether water cools faster with ice cubes or crushed ice. What information should be recorded to draw a conclusion?",o:["The mass of the ice added","The type of container used","The water temperature taken at regular intervals","The room temperature at the start and end"],a:2},
+  {q:"Kato drops food colouring into beakers of water at different temperatures and records how long it takes to diffuse. What can be concluded?",o:["Temperature has no effect on diffusion rate","Food colouring is less soluble at lower temperatures","The greater the temperature, the faster the diffusion rate","The lower the temperature, the shorter the time of diffusion"],a:2},
+  {q:"For scientific data, what is usually placed along the y-axis of a graph?",o:["Element symbols","Negative numbers","Dependent variables","Independent variables"],a:2},
+  {q:"Adam uses paper chromatography and compares his drink sample to three known food dyes. His sample matches dyes 2 and 3. Which dyes are in his soft drink?",o:["Dye 1 only","Dye 3 only","Dyes 1 and 2","Dyes 2 and 3"],a:3},
+  {q:"When salt is added to ice, the ice begins to melt because the salt...",o:["Raises the freezing point of the water","Lowers the freezing point of the water","Raises the boiling point of the water","Lowers the boiling point of the water"],a:1},
+  {q:"When Lily turns on the light, which energy transfer happens?",o:["Electrical → heat and light","Light → heat and electrical","Light → magnetic and electrical","Electrical → light and kinetic"],a:0},
+  {q:"How can Jenna best improve the reliability of her coin-flip results after 4 trials?",o:["Flip the coin one more time","Flip the coin six more times","Use a 50p coin instead","Use a different 10p coin for each trial"],a:1},
+  {q:"Dams hold back water. When water is released through turbines, which form of energy do the turbines generate?",o:["Solar energy","Thermal energy","Chemical energy","Electrical energy"],a:3},
+  {q:"Emma combs her hair and holds the comb near a flow of water — the water bends toward the comb. Why?",o:["The water has a positive charge and the comb is neutral","The water and comb have the same electrical charge","The water has a negative charge and the comb is neutral","The water and comb have opposite electrical charges"],a:3},
+  {q:"When a resistor is added to a circuit, the flow of electricity...",o:["Stops","Reverses direction","Decreases","Increases"],a:2},
+  {q:"Jack makes a simple electric motor. Which statement explains how it works?",o:["The magnet completes a circuit so an electric force turns the coil","Electric current makes the bottom of the coil hot so it flips over","Electricity makes the coil act like a magnet","The battery gives off heat that rises to make the coil spin"],a:2},
+  {q:"Mr Green leaves a garden hose on grass for several days. The grass underneath turns yellow. Why?",o:["The hose blocked sunlight so the grass stopped photosynthesising","The weight of the hose prevented water from flowing through the grass","The hose absorbed heat which burned the grass","The grass absorbed the colour of the hose"],a:0},
+  {q:"After a plant investigation, Emma is unsure how much water the plants were given. What could she do differently next time?",o:["Use a chart to record how much water each plant is given","Keep a full beaker of water next to the plants","Write down the dates the plants are watered","Have different people watering the plants each time"],a:0},
+  {q:"Why should a scientist share the results of her work with other scientists?",o:["It will make the scientist more intelligent","It allows the scientist to change her results later","It allows other scientists to repeat the investigation","It will prove that the scientist conducted the investigation herself"],a:2},
+  {q:"Which of these statements describes photosynthesis?",o:["Plants take in oxygen and release sugar","Plants take in sugar and release minerals","Plants take in minerals and release carbon dioxide","Plants take in carbon dioxide and release oxygen"],a:3},
+  {q:"Which structure in a plant cell allows it to make food?",o:["Cell wall","Cytoplasm","Chloroplast","Vacuole"],a:2},
+  {q:"Hassan compares antacid brands. Brand 1 (1.3g) neutralised 24.6 cm³ of acid, Brand 2 (1.9g) neutralised 24.4 cm³, Brand 3 (1.8g) neutralised 24.3 cm³. What can Hassan conclude?",o:["Brand 2 is more alkaline than brands 1 or 3","Brand 1 is more effective at neutralising acid than brands 2 or 3","The alkaline substance in brand 3 has the greatest density","The alkaline substance in brand 2 is different from the others"],a:1},
+  {q:"Zara mixes two chemicals and puts the beaker in ice. As the chemicals react, the ice starts to melt. The reaction is...",o:["Endothermic, because energy is absorbed","Endothermic, because energy is released","Exothermic, because energy is absorbed","Exothermic, because energy is released"],a:3},
+  {q:"Lily's graph shows that increasing temperature increases the rate of a chemical reaction. What is another valid conclusion?",o:["The reaction has reached its highest rate at 30°C","There is no chemical reaction below 10°C","This chemical reaction is fastest at 20°C","The reaction rate increases with temperature (confirmed at all measured points)"],a:3},
+  {q:"In the contact process, vanadium oxide (V₂O₅) is used. What is its function?",o:["To absorb excess heat","To increase the rate of the reaction","To reduce pressure on the reactants","To provide oxygen atoms to the products"],a:1},
+  {q:"What is formed when hydrochloric acid (HCl) reacts with sodium hydroxide (NaOH)?",o:["NaCl and H₂O","NaOH and HCl","HCl and NaCl","NaOH and H₂O"],a:0},
+  {q:"Iron can be produced by heating iron oxide with carbon. Which metal CANNOT be produced this way, using the reactivity series?",o:["Chromium","Manganese","Nickel","Lithium"],a:3},
+  {q:"A scientist tests hearing ranges: cat (50–64,000 Hz), cow (25–35,000 Hz), dog (65–45,000 Hz), horse (55–34,000 Hz). Which animal has the largest hearing range?",o:["Cat","Cow","Dog","Horse"],a:0},
+  {q:"On which object would your weight be nearest to your weight on Earth? (Mercury 0.38, Venus 0.91, Moon 0.17, Mars 0.38)",o:["Mercury","Venus","The Moon","Mars"],a:1},
+  {q:"Tam's model shows summer in the Southern Hemisphere. How can he change it to show summer in the Northern Hemisphere?",o:["Turn the torch away from the foam ball","Tilt the top of the wooden rod toward the torch","Make the foam ball hang lower than the torch","Increase the distance between the foam ball and torch"],a:1},
+  {q:"Why do leaves look green in the summer?",o:["Leaves absorb green light and reflect the other colours","Our eyes see green light produced by the leaves","Leaves reflect red and blue light, which our eyes see as green","Leaves reflect green light and absorb the other colours"],a:3},
+  {q:"Adam investigates whether water warms faster in a black bowl or white bowl. What is the independent variable?",o:["The length of time","The air temperature","The colour of the bowls","The water temperature"],a:2},
+  {q:"What is a light year?",o:["The brightness of starlight reaching Earth","The length of time a star has been emitting light","How far light can travel in one year","How many years light would take to travel to the Sun"],a:2},
+  {q:"Glasses help long-sighted people see as a result of...",o:["Absorption","Diffraction","Reflection","Refraction"],a:3},
+  {q:"Which property of light affects its colour?",o:["Intensity","Frequency","Speed","Amplitude"],a:1},
+  {q:"Iron is heated with sulphur to produce a new substance. Which test would best show it is a compound rather than a mixture?",o:["Iron is magnetic — if the substance is also magnetic, it is a compound","Iron reacts with acids — if the substance also reacts with acids, it is a compound","Iron and sulphur have different melting points — if the new substance's melting point differs from both, it is a compound","Iron is grey and sulphur is yellow — if the new colour differs from both, it is a compound"],a:2},
+];
+
+function shuffle(arr){
+  let a=[...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+const LABELS=['A','B','C','D'];
+const POINTS_BY_ATTEMPT=[10,6,3]; // index = attempts used before correct (0,1,2)
+let session=[],cur=0,score=0,attempts=0,done=false;
+let streak=0,bestStreak=0,correctCount=0,firstTryCount=0;
+const STREAK_MAX=5;
+
+function startQuiz(){
+  session=shuffle(BANK).slice(0,40);
+  cur=0;score=0;streak=0;bestStreak=0;correctCount=0;firstTryCount=0;
+  document.getElementById('start').style.display='none';
+  document.getElementById('end').style.display='none';
+  document.getElementById('quiz').style.display='block';
+  renderStreakMeter();
+  showQ();
+}
+
+function renderStreakMeter(){
+  const meter=document.getElementById('streakmeter');
+  meter.innerHTML='';
+  for(let i=0;i<STREAK_MAX;i++){
+    const pip=document.createElement('span');
+    pip.className='streak-pip';
+    if(i<streak){
+      pip.classList.add(streak>=STREAK_MAX?'fire':'lit');
+    }
+    meter.appendChild(pip);
+  }
+  document.getElementById('streaklabel').textContent=streak;
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.classList.remove('show'),1400);
+}
+
+function showQ(){
+  attempts=0;done=false;
+  const item=session[cur];
+  document.getElementById('qlabel').textContent=`${cur+1} / ${session.length}`;
+  document.getElementById('slabel').textContent=score;
+  document.getElementById('pfill').style.width=`${(cur/session.length)*100}%`;
+  document.getElementById('qtext').textContent=item.q;
+  document.getElementById('fb').className='fb';
+  document.getElementById('fb').textContent='';
+  document.getElementById('nxt').style.display='none';
+  const opts=document.getElementById('opts');
+  opts.innerHTML='';
+  item.o.forEach((txt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='opt';
+    btn.innerHTML=`<span class="lbl">${LABELS[i]}</span><span>${txt}</span>`;
+    btn.onclick=()=>pick(i,btn);
+    opts.appendChild(btn);
+  });
+}
+
+function pick(i,btn){
+  if(done)return;
+  const item=session[cur];
+  const allBtns=document.querySelectorAll('.opt');
+  const fb=document.getElementById('fb');
+  const nxt=document.getElementById('nxt');
+
+  if(i===item.a){
+    done=true;
+    correctCount++;
+    if(attempts===0) firstTryCount++;
+
+    const pts=POINTS_BY_ATTEMPT[Math.min(attempts,2)];
+    let streakBonus=0;
+    streak++;
+    if(streak>bestStreak) bestStreak=streak;
+    if(streak>=STREAK_MAX) streakBonus=5;
+
+    score+=pts+streakBonus;
+    renderStreakMeter();
+
+    btn.classList.add('correct');
+    allBtns.forEach(b=>b.setAttribute('disabled',''));
+
+    let msg=`Correct! <span class="pts">+${pts} pts</span>`;
+    if(streakBonus>0){
+      msg+=` <span class="pts">+${streakBonus} streak bonus</span>`;
+      showToast(`🔥 ${streak} STREAK BONUS`);
+      streak=0; // reset after bonus, like a charge releasing
+      renderStreakMeter();
+    } else if(streak>1){
+      showToast(`Streak ×${streak}`);
+    }
+    fb.className='fb ok';
+    fb.innerHTML=msg;
+
+    nxt.textContent=cur+1<session.length?'Next question →':'See results →';
+    nxt.style.display='inline-block';
+    document.getElementById('slabel').textContent=score;
+  } else {
+    attempts++;
+    btn.classList.add('wrong');
+    btn.setAttribute('disabled','');
+
+    if(attempts>=3){
+      done=true;
+      streak=0;
+      renderStreakMeter();
+      allBtns.forEach(b=>b.setAttribute('disabled',''));
+      allBtns[item.a].classList.add('reveal');
+      fb.className='fb no';
+      fb.innerHTML=`Not this time. The correct answer was ${LABELS[item.a]}: ${item.o[item.a]} <span class="pts">+0 pts</span>`;
+      nxt.textContent=cur+1<session.length?'Next question →':'See results →';
+      nxt.style.display='inline-block';
+      document.getElementById('slabel').textContent=score;
+    } else {
+      fb.className='fb no';
+      fb.textContent=`Incorrect — try again! (${3-attempts} attempt${3-attempts===1?'':'s'} left, worth ${POINTS_BY_ATTEMPT[attempts]} pts)`;
+    }
+  }
+}
+
+function nextQ(){
+  cur++;
+  if(cur>=session.length) showEnd();
+  else showQ();
+}
+
+function showEnd(){
+  document.getElementById('quiz').style.display='none';
+  document.getElementById('end').style.display='block';
+  const pct=Math.round((correctCount/session.length)*100);
+  const maxPts=session.length*POINTS_BY_ATTEMPT[0];
+
+  document.getElementById('escore').textContent=`${correctCount} / ${session.length}`;
+  document.getElementById('eptsline').textContent=`${score} points`;
+  document.getElementById('statcorrect').textContent=correctCount;
+  document.getElementById('statfirst').textContent=firstTryCount;
+  document.getElementById('statbeststreak').textContent=bestStreak;
+
+  const badge=document.getElementById('rankbadge');
+  const rankname=document.getElementById('rankname');
+  const emsg=document.getElementById('emsg');
+  badge.className='rank-badge';
+
+  let rank,icon,msg;
+  if(pct>=90){rank='rank-platinum';icon='🏆';msg='Outstanding! You\'ve mastered this set — try the Year 10 mission next.';rankname.textContent='Platinum';rankname.style.color='#2C8A7A';}
+  else if(pct>=75){rank='rank-gold';icon='🥇';msg='Great work — strong understanding across most topics.';rankname.textContent='Gold';rankname.style.color='#B8860B';}
+  else if(pct>=60){rank='rank-silver';icon='🥈';msg='Good effort — review the ones you missed and run it again.';rankname.textContent='Silver';rankname.style.color='#7A8488';}
+  else {rank='rank-bronze';icon='🥉';msg='Keep practising — every run helps you spot the gaps.';rankname.textContent='Bronze';rankname.style.color='#A0622E';}
+
+  badge.classList.add(rank);
+  badge.textContent=icon;
+  emsg.textContent=`${pct}% correct — ${msg}`;
+}
+</script>
